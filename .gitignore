@@ -1,0 +1,6 @@
+**/test*
+**/__pycache__
+**/DS_Store
+**/.DS_Store
+**/.venv
+**/.node_modules
