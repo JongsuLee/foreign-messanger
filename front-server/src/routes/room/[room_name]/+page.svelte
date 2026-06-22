@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import { chatSocket, joinRoom } from '$lib/chat/chatSocket.svelte';
+	import { chatSocket, joinRoom } from '$lib/chat';
 
 	let { params }: PageProps = $props();
 
