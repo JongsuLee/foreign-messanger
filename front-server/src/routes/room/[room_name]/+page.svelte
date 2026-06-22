@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { chatSocket, joinRoom } from '$lib/chat';
+	import { profile } from '$lib/profile';
 
 	let { params }: PageProps = $props();
 
-	joinRoom(params.room_name, 'willy');
+	joinRoom(params.room_name, profile.profile);
 </script>
 
 <svelte:head>

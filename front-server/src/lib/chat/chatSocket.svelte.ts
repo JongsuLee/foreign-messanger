@@ -5,6 +5,7 @@ import type {
   ClientToServerEvents,
   ServerToClientEvents,
 } from "./types";
+import type { Profile } from "$lib/profile";
 
 type ChatSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -81,15 +82,15 @@ export function disconnect() {
   chatSocket.error = null;
 }
 
-export function joinRoom(roomName: string, username: string) {
+export function joinRoom(roomName: string, profile: Profile) {
   if (!chatSocket.socket?.connected) {
     console.log("joinRoom error", chatSocket.error);
     chatSocket.error = "Socket is not connected";
     return;
   }
 
-  console.log("joinRoom", roomName, username);
-  chatSocket.socket.emit("chat:join", { roomName, username });
+  console.log("joinRoom", roomName, profile.name);
+  chatSocket.socket.emit("chat:join", { roomName, profile });
   chatSocket.currentRoom = roomName;
   chatSocket.messages = [];
 }
