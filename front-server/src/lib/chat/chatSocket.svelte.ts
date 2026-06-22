@@ -83,10 +83,12 @@ export function disconnect() {
 
 export function joinRoom(roomName: string, username: string) {
   if (!chatSocket.socket?.connected) {
+    console.log("joinRoom error", chatSocket.error);
     chatSocket.error = "Socket is not connected";
     return;
   }
 
+  console.log("joinRoom", roomName, username);
   chatSocket.socket.emit("chat:join", { roomName, username });
   chatSocket.currentRoom = roomName;
   chatSocket.messages = [];
