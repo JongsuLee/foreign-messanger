@@ -1,11 +1,117 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import { onMount } from 'svelte';
 	import { chatSocket, joinRoom } from '$lib/chat';
 	import { profile } from '$lib/profile';
+	import ButtonFrame from '$lib/components/ButtonFrame.svelte';
 
 	let { params }: PageProps = $props();
+	let isMicAvailable = $state(true);
+	let isRecording = $state(false);
+	let myStream = $state<MediaStream | null>(null);
+	let mediaRecorder = $state<MediaRecorder | null>(null);
+	let audioChunks: BlobPart[] = [];
+	let classList = $state(['record-audio-button']);
+	// let messages = $state<ChatMessage[]>([]);
 
-	joinRoom(params.room_name, profile.profile);
+	const SAVE_AUDIO_URL = import.meta.env.VITE_SAVE_AUDIO_URL;
+
+	async function sendAudioFile(
+		audioBlob: Blob,
+		filename: string,
+		callId: string,
+		caller: string
+	) {
+		const formData = new FormData();
+		formData.append('file', audioBlob, filename);
+		formData.append('call_id', callId);
+		formData.append('caller', caller);
+
+		const response = await fetch(`${SAVE_AUDIO_URL}/save`, {
+			method: 'POST',
+			body: formData
+		});
+
+		if (!response.ok) {
+			throw new Error(`오디오 전송 실패: ${response.status}`);
+		}
+	}
+
+	async function getMyStream() {
+		let stream: MediaStream | null = null;
+		let isMicAvailable = true;
+
+		try {
+			stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		} catch (error) {
+			console.error('Error getting my stream', error);
+			isMicAvailable = false;
+			classList = [...classList, 'disabled'];
+		}
+
+		return {
+			'stream': stream,
+			'isMicAvailable': isMicAvailable
+		}
+	}
+
+	async function recordAudio() {
+		if (!myStream) {
+			const result = await getMyStream();
+
+			myStream = result.stream
+			isMicAvailable = result.isMicAvailable
+		}
+
+		if (!myStream) {
+			return;
+		}
+
+		isRecording = !isRecording;
+
+		if (isRecording) {
+			audioChunks = [];
+			mediaRecorder = new MediaRecorder(myStream);
+			mediaRecorder.ondataavailable = (event) => {
+				if (event.data.size > 0) {
+					audioChunks.push(event.data);
+				}
+			};
+			mediaRecorder.start();
+			classList = [...classList, 'recording'];
+		} else {
+			if (!mediaRecorder) {
+				return;
+			}
+
+			classList = classList.filter(className => className !== 'recording');
+			const recorder = mediaRecorder;
+			recorder.onstop = async () => {
+				const mimeType = recorder.mimeType || 'audio/webm';
+				const extension = mimeType.includes('webm') ? 'webm' : 'ogg';
+				const audioBlob = new Blob(audioChunks, { type: mimeType });
+				const filename = `${Date.now()}.${extension}`;
+				const callId = params.room_name;
+				const caller = profile.profile?.name ?? 'unknown';
+
+				try {
+					await sendAudioFile(audioBlob, filename, callId, caller);
+				} catch (error) {
+					console.error('Error sending audio file', error);
+				}
+
+				mediaRecorder = null;
+				audioChunks = [];
+			};
+			recorder.stop();
+		}
+	}
+
+	onMount(() => {
+		if (profile.profile) {
+			joinRoom(params.room_name, profile.profile);
+		}
+	})
 </script>
 
 <svelte:head>
@@ -21,6 +127,12 @@
 		<a href="/">홈</a>
 		<a href="/profile">프로필</a>
 	</nav>
+	<ButtonFrame 
+	id="record-audio-button" 
+	class={['record-audio-button']} 
+	isDisabled={!isMicAvailable} clickHandler={async () => await recordAudio()} 
+	message={isRecording ? 'Stop Recording' : 'Record Audio'}
+	/>
 </main>
 
 <style>
