@@ -39,3 +39,13 @@ export interface ClientToServerEvents {
   "chat:leave": (payload: ChatLeavePayload) => void;
   "chat:send": (payload: ChatSendPayload) => void;
 }
+
+export interface Conversation {
+  room: string;
+  created_at: number;
+  updated_at: number;
+  caller: string;
+  relative_start_time: number;
+  relative_end_time: number;
+  content: string;
+}

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { onMount } from 'svelte';
-	import { chatSocket, joinRoom } from '$lib/chat';
+	import { chatSocket, joinRoom, type Conversation } from '$lib/chat';
 	import { profile } from '$lib/profile';
 	import ButtonFrame from '$lib/components/ButtonFrame.svelte';
+	import ConversationFrame from '$lib/components/ConversationFrame.svelte';
 
 	let { params }: PageProps = $props();
 	let isMicAvailable = $state(true);
@@ -12,7 +13,7 @@
 	let mediaRecorder = $state<MediaRecorder | null>(null);
 	let audioChunks: BlobPart[] = [];
 	let classList = $state(['record-audio-button']);
-	// let messages = $state<ChatMessage[]>([]);
+	let conversations = $state<Conversation[]>([]);
 
 	const SAVE_AUDIO_URL = import.meta.env.VITE_SAVE_AUDIO_URL;
 
@@ -107,9 +108,30 @@
 		}
 	}
 
-	onMount(() => {
+	onMount(async() => {
 		if (profile.profile) {
 			joinRoom(params.room_name, profile.profile);
+			const response = await fetch(`${SAVE_AUDIO_URL}/conversation_list`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					room: params.room_name,
+					target_time: Date.now(),
+					offset: 0
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to get conversations: ${response.status}`);
+			}
+
+			const data = await response.json();
+			const conversation_list = data.conversation_list;
+			
+			if (conversation_list.length) {
+				conversation_list.sort((a: Conversation, b: Conversation) => a.created_at - b.created_at);
+				conversations = conversation_list;
+			}
 		}
 	})
 </script>
@@ -133,6 +155,15 @@
 	isDisabled={!isMicAvailable} clickHandler={async () => await recordAudio()} 
 	message={isRecording ? 'Stop Recording' : 'Record Audio'}
 	/>
+
+	<div class="conversation-list">
+		{#each conversations as conversation (conversation.created_at)}
+			<ConversationFrame
+				{conversation}
+				profileId={profile.profile?.id ?? ''}
+			/>
+		{/each}
+	</div>
 </main>
 
 <style>
@@ -145,6 +176,13 @@
 	nav {
 		display: flex;
 		gap: 1rem;
+		margin-top: 1.5rem;
+	}
+
+	.conversation-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 		margin-top: 1.5rem;
 	}
 </style>
