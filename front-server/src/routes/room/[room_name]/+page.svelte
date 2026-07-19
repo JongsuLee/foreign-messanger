@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { onMount } from 'svelte';
-	import { chatSocket, joinRoom, type Conversation } from '$lib/chat';
+	import { chatSocket, joinRoom, setConversationCallback, type Conversation } from '$lib/chat';
 	import { profile } from '$lib/profile';
 	import ButtonFrame from '$lib/components/ButtonFrame.svelte';
 	import ConversationFrame from '$lib/components/ConversationFrame.svelte';
@@ -13,7 +13,7 @@
 	let mediaRecorder = $state<MediaRecorder | null>(null);
 	let audioChunks: BlobPart[] = [];
 	let classList = $state(['record-audio-button']);
-	let conversations = $state<Conversation[]>([]);
+	let conversationsList = $state<(Conversation & { key: string })[][]>([]);
 
 	const SAVE_AUDIO_URL = import.meta.env.VITE_SAVE_AUDIO_URL;
 
@@ -32,6 +32,7 @@
 			method: 'POST',
 			body: formData
 		});
+		console.log("sendAudioFile response", response);
 
 		if (!response.ok) {
 			throw new Error(`오디오 전송 실패: ${response.status}`);
@@ -93,7 +94,7 @@
 				const audioBlob = new Blob(audioChunks, { type: mimeType });
 				const filename = `${Date.now()}.${extension}`;
 				const callId = params.room_name;
-				const caller = profile.profile?.name ?? 'unknown';
+				const caller = profile.profile?.id ?? 'unknown';
 
 				try {
 					await sendAudioFile(audioBlob, filename, callId, caller);
@@ -106,6 +107,45 @@
 			};
 			recorder.stop();
 		}
+	}
+
+	function setConversationsList(conversation_list: Conversation[]) {
+		conversation_list.sort((a: Conversation, b: Conversation) =>
+			a.created_at - b.created_at || a.caller.localeCompare(b.caller)
+		);
+
+		let lastConversation: Conversation | null = null
+		let conversations: (Conversation & { key: string })[][] = [];
+		let lastConversations: (Conversation & { key: string })[] = [];
+		for (const conversation of conversation_list) {
+			if (!lastConversation) {
+				lastConversation = conversation
+			}
+
+			if (lastConversation.caller !== conversation.caller || lastConversation.created_at !== conversation.created_at) {
+				console.log("lastConversations", lastConversations);
+				console.log("conversation", conversation);
+				lastConversations.sort((a: Conversation & { key: string }, b: Conversation & { key: string }) => a.relative_start_time - b.relative_start_time);
+				conversations.push(lastConversations)
+				lastConversations = []
+				lastConversation = conversation
+			}
+			
+			lastConversations.push({
+				...conversation,
+				key: crypto.randomUUID()
+			})
+		}
+		lastConversations.sort((a: Conversation & { key: string }, b: Conversation & { key: string }) => a.relative_start_time - b.relative_start_time);
+		conversations.push(lastConversations)
+
+		return conversations;
+	}
+
+	function handleConversationsCallback(conversations: Conversation[]) {
+		const newConversationsList = setConversationsList(conversations);
+
+		conversationsList = [...conversationsList, ...newConversationsList];
 	}
 
 	onMount(async() => {
@@ -126,12 +166,15 @@
 			}
 
 			const data = await response.json();
-			const conversation_list = data.conversation_list;
+			const conversation_list = data.conversation_list as Conversation[];
 			
 			if (conversation_list.length) {
-				conversation_list.sort((a: Conversation, b: Conversation) => a.created_at - b.created_at);
-				conversations = conversation_list;
+				const conversations = setConversationsList(conversation_list);
+				conversationsList = conversations
+				console.log("conversationsList", conversationsList);
 			}
+
+			setConversationCallback(handleConversationsCallback);
 		}
 	})
 </script>
@@ -157,9 +200,9 @@
 	/>
 
 	<div class="conversation-list">
-		{#each conversations as conversation (conversation.created_at)}
+		{#each conversationsList as conversations (conversations[0].key)}
 			<ConversationFrame
-				{conversation}
+				{conversations}
 				profileId={profile.profile?.id ?? ''}
 			/>
 		{/each}

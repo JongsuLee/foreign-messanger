@@ -15,7 +15,7 @@ export interface ChatUserEvent {
 
 export interface ChatJoinPayload {
   roomName: string;
-  profile: Profile;
+  username: string;
 }
 
 export interface ChatLeavePayload {
@@ -27,19 +27,6 @@ export interface ChatSendPayload {
   content: string;
 }
 
-export interface ServerToClientEvents {
-  "chat:message": (message: ChatMessage) => void;
-  "chat:history": (messages: ChatMessage[]) => void;
-  "chat:user-joined": (payload: ChatUserEvent) => void;
-  "chat:user-left": (payload: ChatUserEvent) => void;
-}
-
-export interface ClientToServerEvents {
-  "chat:join": (payload: ChatJoinPayload) => void;
-  "chat:leave": (payload: ChatLeavePayload) => void;
-  "chat:send": (payload: ChatSendPayload) => void;
-}
-
 export interface Conversation {
   room: string;
   created_at: number;
@@ -48,4 +35,23 @@ export interface Conversation {
   relative_start_time: number;
   relative_end_time: number;
   content: string;
+}
+
+export interface ChatConversations {
+  room: string;
+  conversations: Conversation[];
+}
+
+export interface ServerToClientEvents {
+  "chat:message": (message: ChatMessage) => void;
+  "chat:history": (messages: ChatMessage[]) => void;
+  "chat:user-joined": (payload: ChatUserEvent) => void;
+  "chat:user-left": (payload: ChatUserEvent) => void;
+  "chat:conversation": (payload: ChatConversations) => void;
+}
+
+export interface ClientToServerEvents {
+  "chat:join": (payload: ChatJoinPayload) => void;
+  "chat:leave": (payload: ChatLeavePayload) => void;
+  "chat:send": (payload: ChatSendPayload) => void;
 }

@@ -8,4 +8,5 @@ export {
   joinRoom,
   leaveRoom,
   sendMessage,
+  setConversationCallback,
 } from "./chatSocket.svelte";

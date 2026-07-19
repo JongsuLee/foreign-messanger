@@ -35,10 +35,13 @@
 	});
 
 	onMount(() => {
+		console.log("onMount connect");
 		const isPublicPath = publicPaths.includes(page.url.pathname);
 		const isAuthenticated = profile.profile || getProfileInSessionStorage();
+		console.log("isPublicPath", isPublicPath);
+		console.log("isAuthenticated", isAuthenticated);
 
-		if (!isPublicPath && !isAuthenticated) return;
+		// if (!isPublicPath && !isAuthenticated) return;
 
 		connect();
 

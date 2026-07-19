@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { Server, type Socket } from "socket.io";
 import type {
+  ChatConversations,
   ChatMessage,
   ClientToServerEvents,
   ServerToClientEvents,
@@ -112,6 +113,18 @@ io.on("connection", (socket) => {
 
     addMessage(message);
     io.to(trimmedRoom).emit("chat:message", message);
+  });
+
+  socket.on("chat:conversation", ({ room, conversations }) => {
+    const trimmedRoom = room.trim();
+    if (!trimmedRoom) return;
+
+    const conversation: ChatConversations = {
+      room: trimmedRoom,
+      conversations: conversations,
+    };
+
+    io.to(trimmedRoom).emit("chat:conversation", conversation);
   });
 
   socket.on("disconnect", () => {

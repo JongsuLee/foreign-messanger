@@ -1,13 +1,15 @@
-import { browser } from "$app/environment";
 import { io, type Socket } from "socket.io-client";
 import type {
+  ChatConversations,
   ChatMessage,
   ClientToServerEvents,
+  Conversation,
   ServerToClientEvents,
 } from "./types";
 import type { Profile } from "$lib/profile";
 
 type ChatSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
+type ConversationCallback = ((conversations: Conversation[]) => void) | null;
 
 const DEFAULT_SOCKET_URL =
   import.meta.env.VITE_SOCKET_URL ?? "http://localhost:3000";
@@ -18,7 +20,24 @@ export const chatSocket = $state({
   currentRoom: null as string | null,
   messages: [] as ChatMessage[],
   error: null as string | null,
+  conversationCallback: null as ConversationCallback,
 });
+
+function handleChatConversation(conversation: ChatConversations) {
+  chatSocket.conversationCallback?.(conversation.conversations);
+}
+
+function bindConversationListener(sock: ChatSocket | null) {
+  if (!sock) return;
+
+  sock.off("chat:conversation", handleChatConversation);
+  sock.on("chat:conversation", handleChatConversation);
+}
+
+export function setConversationCallback(callback: ConversationCallback) {
+  chatSocket.conversationCallback = callback;
+  bindConversationListener(chatSocket.socket);
+}
 
 function attachChatListeners(sock: ChatSocket) {
   sock.on("connect", () => {
@@ -38,6 +57,8 @@ function attachChatListeners(sock: ChatSocket) {
     chatSocket.messages = [...chatSocket.messages, message];
   });
 
+  bindConversationListener(sock);
+
   sock.on("chat:history", (history) => {
     chatSocket.messages = history;
   });
@@ -52,9 +73,9 @@ function attachChatListeners(sock: ChatSocket) {
 }
 
 export function connect(url: string = DEFAULT_SOCKET_URL): ChatSocket | null {
-  if (!browser) return null;
-
-  if (chatSocket.socket?.connected) return chatSocket.socket;
+  if (chatSocket.socket?.connected) {
+    return chatSocket.socket;
+  }
 
   chatSocket.socket?.removeAllListeners();
   chatSocket.socket?.disconnect();
@@ -80,17 +101,19 @@ export function disconnect() {
   chatSocket.currentRoom = null;
   chatSocket.messages = [];
   chatSocket.error = null;
+  chatSocket.conversationCallback = null;
 }
 
 export function joinRoom(roomName: string, profile: Profile) {
   if (!chatSocket.socket?.connected) {
-    console.log("joinRoom error", chatSocket.error);
     chatSocket.error = "Socket is not connected";
     return;
   }
 
-  console.log("joinRoom", roomName, profile.name);
-  chatSocket.socket.emit("chat:join", { roomName, profile });
+  chatSocket.socket.emit("chat:join", {
+    roomName,
+    username: profile?.name || "unknown",
+  });
   chatSocket.currentRoom = roomName;
   chatSocket.messages = [];
 }

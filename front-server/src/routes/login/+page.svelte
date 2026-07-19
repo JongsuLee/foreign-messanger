@@ -49,12 +49,20 @@
 	}
 
 	function verifyLogin(id: string, password: string) {
-		const userMap = {
+		const userMap:{[key: string]: {id: string, password: string, name: string, email: string, avatar: string, createdAt: string}} = {
 			'jslee': {
 				'id': 'jslee',
 				'password': 'Hello123#',
 				'name': '이종수',
 				'email': 'jslee@naver.com',
+				'avatar': '',
+				'createdAt': '',
+			},
+			'willee': {
+				'id': 'willee',
+				'password': 'Hello123#',
+				'name': '이정연',
+				'email': 'willee@naver.com',
 				'avatar': '',
 				'createdAt': '',
 			}
@@ -106,14 +114,14 @@
 		type="text" 
 		bind:value={id} 
 		placeholder="아이디" 
-		status={idMessage? 'error' : ''}
+		status={idMessage ? 'error' : undefined}
 		message={idMessage}
 		/>
 	<InputFrame
 		type="password"
 		bind:value={password}
 		placeholder="비밀번호" 
-		status={passwordMessage? 'error' : ''}
+		status={passwordMessage ? 'error' : undefined}
 		message={passwordMessage}
 	/>
 	<ButtonFrame
