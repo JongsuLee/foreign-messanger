@@ -73,6 +73,7 @@ function attachChatListeners(sock: ChatSocket) {
 }
 
 export function connect(url: string = DEFAULT_SOCKET_URL): ChatSocket | null {
+  console.log("connect", url);
   if (chatSocket.socket?.connected) {
     return chatSocket.socket;
   }

@@ -10,7 +10,7 @@ import type {
 } from "./types.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
-const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "http://localhost:5173";
+const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "*";
 
 const roomMessages = new Map<string, ChatMessage[]>();
 
