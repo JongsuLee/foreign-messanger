@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { chatSocket, joinRoom, setConversationCallback, type Conversation } from '$lib/chat';
 	import { profile } from '$lib/profile';
 	import ButtonFrame from '$lib/components/ButtonFrame.svelte';
@@ -14,6 +14,25 @@
 	let audioChunks: BlobPart[] = [];
 	let classList = $state(['record-audio-button']);
 	let conversationsList = $state<(Conversation & { key: string })[][]>([]);
+	let conversationListEl = $state<HTMLDivElement | null>(null);
+	let lastConversationKey = $state<string | null>(null);
+
+	$effect(() => {
+		console.log("conversationsList", conversationsList);
+		if (conversationsList.length > 0) {
+			if (lastConversationKey === null || lastConversationKey !== conversationsList[conversationsList.length - 1][0].key) {
+				lastConversationKey = conversationsList[conversationsList.length - 1][0].key;
+			}
+			console.log("lastConversationKey", lastConversationKey);
+		}
+
+		tick().then(() => {
+			conversationListEl?.scrollTo({
+				top: conversationListEl.scrollHeight,
+				behavior: 'smooth'
+			});
+		});
+	});
 
 	const SAVE_AUDIO_URL = import.meta.env.VITE_SAVE_AUDIO_URL;
 
@@ -143,6 +162,7 @@
 	}
 
 	function handleConversationsCallback(conversations: Conversation[]) {
+		console.log("handleConversationsCallback", conversations);
 		const newConversationsList = setConversationsList(conversations);
 
 		conversationsList = [...conversationsList, ...newConversationsList];
@@ -199,7 +219,7 @@
 	message={isRecording ? 'Stop Recording' : 'Record Audio'}
 	/>
 
-	<div class="conversation-list">
+	<div class="conversation-list" bind:this={conversationListEl}>
 		{#each conversationsList as conversations (conversations[0].key)}
 			<ConversationFrame
 				{conversations}
@@ -227,5 +247,7 @@
 		flex-direction: column;
 		gap: 0.75rem;
 		margin-top: 1.5rem;
+		max-height: min(32rem, 60vh);
+		overflow-y: auto;
 	}
 </style>
