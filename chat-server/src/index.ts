@@ -118,6 +118,7 @@ io.on("connection", (socket) => {
   socket.on("chat:conversation", ({ room, conversations }) => {
     const trimmedRoom = room.trim();
     if (!trimmedRoom) return;
+    console.log("chat:conversation", trimmedRoom, conversations);
 
     const conversation: ChatConversations = {
       room: trimmedRoom,
