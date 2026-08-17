@@ -35,6 +35,7 @@
 	});
 
 	const SAVE_AUDIO_URL = import.meta.env.VITE_SAVE_AUDIO_URL;
+	const DEFAULT_BASE_URL = import.meta.env.BASE_URL ?? "";
 
 	async function sendAudioFile(
 		audioBlob: Blob,
@@ -209,8 +210,8 @@
 	<p>채팅방에 입장했습니다.</p>
 
 	<nav>
-		<a href="/">홈</a>
-		<a href="/profile">프로필</a>
+		<a href="${DEFAULT_BASE_URL}/">홈</a>
+		<a href="${DEFAULT_BASE_URL}/profile">프로필</a>
 	</nav>
 	<ButtonFrame 
 	id="record-audio-button" 

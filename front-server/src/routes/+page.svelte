@@ -1,3 +1,6 @@
+<script lang="ts">
+	const DEFAULT_BASE_URL = import.meta.env.BASE_URL ?? "";
+</script>
 
 <svelte:head>
 	<title>Home</title>
@@ -8,8 +11,8 @@
 	<p>메인 홈 페이지입니다.</p>
 
 	<nav>
-		<a href="/profile">프로필</a>
-		<a href="/room/general">general 방 입장</a>
+		<a href="${DEFAULT_BASE_URL}/profile">프로필</a>
+		<a href="${DEFAULT_BASE_URL}/room/general">general 방 입장</a>
 	</nav>
 </main>
 

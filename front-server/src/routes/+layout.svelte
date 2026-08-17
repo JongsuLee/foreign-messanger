@@ -6,8 +6,9 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { connect, disconnect } from '$lib/chat/';
 	import { profile, getProfileInSessionStorage, setProfile } from '$lib/profile/';
-
-	const publicPaths = ['/login', '/signup'];
+	
+	const DEFAULT_BASE_URL = import.meta.env.BASE_URL ?? "";
+	const publicPaths = [`${DEFAULT_BASE_URL}/login`, `${DEFAULT_BASE_URL}/signup`];
 
 	let { children } = $props();
 
@@ -25,7 +26,7 @@
 			return;
 		}
 
-		goto('/login');
+		goto(`${DEFAULT_BASE_URL}/login`);
 	}
 
 	$effect(() => {

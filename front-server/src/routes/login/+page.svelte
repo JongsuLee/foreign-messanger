@@ -7,6 +7,7 @@
 	let idMessage = $state('');
 	let password = $state('');
 	let passwordMessage = $state('');
+	const DEFAULT_BASE_URL = import.meta.env.BASE_URL ?? "";
 
 	function checkPasswordFormat(password: string): string {
 		let hasCapital: boolean = false;
@@ -136,13 +137,13 @@
 			profile.profile = messages['profile'];
 
 			if (profile.profile) {
-				goto('/')
+				goto(`${DEFAULT_BASE_URL}/`)
 			}
 		}}
 	/>
 	
 	<nav>
-		<a href="/">홈</a>
+		<a href="${DEFAULT_BASE_URL}/">홈</a>
 	</nav>
 </main>
 

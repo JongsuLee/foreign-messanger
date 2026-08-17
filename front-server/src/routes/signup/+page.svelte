@@ -1,3 +1,6 @@
+<script lang="ts">
+	const DEFAULT_BASE_URL = import.meta.env.BASE_URL ?? "";
+</script>
 
 <svelte:head>
 	<title>Sign Up</title>
@@ -8,7 +11,7 @@
 	<p>회원가입 페이지입니다.</p>
 
 	<nav>
-		<a href="/">홈</a>
+		<a href="${DEFAULT_BASE_URL}/">홈</a>
 	</nav>
 </main>
 
